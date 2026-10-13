@@ -12,7 +12,9 @@ app.use('/css', express.static(path.join(projectRoot, 'css')));
 app.use('/js', express.static(path.join(projectRoot, 'js')));
 app.use('/assets', express.static(path.join(projectRoot, 'assets')));
 app.get('/', (_request, response) => {
+
   response.sendFile(path.join(projectRoot, 'index.html'));
+  
 });
 
 app.listen(port, '127.0.0.1', () => {
