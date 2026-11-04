@@ -16,11 +16,7 @@ except ImportError:  # Vercel loads main.py from the backend service root.
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(
-    title="BD Tourist Guide MVP API",
-    description="CRUD API for Bangladesh tourist destinations.",
-    version="1.0.0",
-)
+app = FastAPI(title="BD Tourist Guide API", root_path="/api")
 
 allowed_origins = [
     origin.strip()
