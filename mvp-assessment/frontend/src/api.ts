@@ -12,29 +12,29 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
         ...init?.headers,
       },
     })
-  } catch {
-    throw new Error('Cannot reach the API. Start the FastAPI backend and try again.')
+  } catch (error) {
+    throw new Error('Network error: Could not connect to the server.')
   }
 
+  const data = await response.json().catch(() => null)
+
   if (!response.ok) {
-    const body = await response.json().catch(() => null) as { detail?: string | { msg?: string }[] } | null
-    const detail = Array.isArray(body?.detail)
-      ? body.detail.map((item) => item.msg).filter(Boolean).join(' ')
-      : body?.detail
-    throw new Error(detail ?? `Request failed (${response.status}).`)
+    throw new Error((data as { detail?: string })?.detail ?? `Request failed: ${response.status}`)
   }
-  if (response.status === 204) return undefined as T
-  return response.json() as Promise<T>
+
+  return data as T
 }
 
 export const destinationApi = {
   list: () => request<Destination[]>('/destinations'),
   get: (id: number) => request<Destination>(`/destinations/${id}`),
-  create: (input: DestinationInput) => request<Destination>('/destinations', {
-    method: 'POST', body: JSON.stringify(input),
+  create: (payload: DestinationInput) => request<Destination>('/destinations', {
+    method: 'POST',
+    body: JSON.stringify(payload),
   }),
-  update: (id: number, input: DestinationInput) => request<Destination>(`/destinations/${id}`, {
-    method: 'PUT', body: JSON.stringify(input),
+  update: (id: number, payload: DestinationInput) => request<Destination>(`/destinations/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
   }),
-  remove: (id: number) => request<void>(`/destinations/${id}`, { method: 'DELETE' }),
+  remove: (id: number) => request<null>(`/destinations/${id}`, { method: 'DELETE' }),
 }
