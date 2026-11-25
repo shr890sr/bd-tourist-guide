@@ -1,5 +1,3 @@
-import os
-
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
@@ -30,7 +28,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174,https://bd-tourist-guide-mvp-assessment.vercel.app").split(",") if origin.strip()],
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "https://bd-tourist-guide.vercel.app"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
