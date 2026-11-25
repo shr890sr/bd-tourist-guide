@@ -1,40 +1,34 @@
-import type { Destination, DestinationInput } from './types'
+import axios from 'axios'
+import type { Destination, DestinationInput, AdminUser } from './types'
 
-const API_BASE = '/api'
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000'
+const api = axios.create({ baseURL: `${API_URL}/api` })
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let response: Response
-  try {
-    response = await fetch(`${API_BASE}${path}`, {
-      ...init,
-      headers: {
-        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-        ...init?.headers,
-      },
-    })
-  } catch (error) {
-    throw new Error('Network error: Could not connect to the server.')
-  }
-
-  const data = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    throw new Error((data as { detail?: string })?.detail ?? `Request failed: ${response.status}`)
-  }
-
-  return data as T
-}
+// Read the latest token at request time so every protected request automatically
+// carries Authorization: Bearer <JWT>, including after login or logout.
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token')
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  else delete config.headers.Authorization
+  return config
+})
 
 export const destinationApi = {
-  list: () => request<Destination[]>('/destinations'),
-  get: (id: number) => request<Destination>(`/destinations/${id}`),
-  create: (payload: DestinationInput) => request<Destination>('/destinations', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
-  update: (id: number, payload: DestinationInput) => request<Destination>(`/destinations/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  }),
-  remove: (id: number) => request<null>(`/destinations/${id}`, { method: 'DELETE' }),
+  list: async () => (await api.get<Destination[]>('/destinations')).data,
+  get: async (id: number) => (await api.get<Destination>(`/destinations/${id}`)).data,
+  create: async (payload: DestinationInput) => (await api.post<Destination>('/destinations', payload)).data,
+  update: async (id: number, payload: DestinationInput) => (await api.put<Destination>(`/destinations/${id}`, payload)).data,
+  remove: async (id: number) => { await api.delete(`/destinations/${id}`) },
+}
+
+export const adminApi = {
+  users: async () => (await api.get<AdminUser[]>('/admin/users')).data,
+  toggleBan: async (id: number) => (await api.put<AdminUser>(`/admin/users/${id}/ban`)).data,
+}
+
+export function apiErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.detail ?? error.message ?? 'The request failed.'
+  }
+  return error instanceof Error ? error.message : 'The request failed.'
 }

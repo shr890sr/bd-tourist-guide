@@ -1,10 +1,7 @@
-.venv/
+node_modules/
 __pycache__/
-*.py[cod]
-*.db
-*.sqlite
-.pytest_cache/
-frontend/node_modules/
-frontend/dist/
-frontend/.vite/
 .env
+venv/
+.venv/
+dist/
+*.py[cod]

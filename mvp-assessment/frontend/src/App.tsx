@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
+import { AuthProvider, useAuth } from './AuthContext'
+import { Login, Register } from './pages/AuthPages'
+import AdminDashboard from './pages/AdminDashboard'
+import Dashboard from './pages/Dashboard'
+import Home from './pages/Home'
 import { destinationApi } from './api'
 import { DestinationDetail } from './components/DestinationDetail'
 import { DestinationForm } from './components/DestinationForm'
@@ -6,6 +12,46 @@ import { DestinationList } from './components/DestinationList'
 import type { Destination, DestinationInput } from './types'
 
 export default function App() {
+  return <AuthProvider><BrowserRouter>
+    <Navbar />
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/dashboard" element={<ProtectedDashboard />} />
+      <Route path="/admin" element={<ProtectedAdminDashboard />} />
+      <Route path="/destinations" element={<DestinationApp />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </BrowserRouter></AuthProvider>
+}
+
+function ProtectedDashboard() {
+  const { token } = useAuth()
+  return token ? <Dashboard /> : <Navigate to="/login" replace />
+}
+
+function ProtectedAdminDashboard() {
+  const { token, user, authLoading } = useAuth()
+  if (authLoading) return <main className="mx-auto max-w-6xl p-6" aria-live="polite">Loading account…</main>
+  // This guard controls navigation; admin router dependencies enforce authorization
+  // again on every API request, so manually editing the browser state grants no access.
+  if (!token) return <Navigate to="/login" replace />
+  return user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/dashboard" replace />
+}
+
+function Navbar() {
+  const { token, user } = useAuth()
+  return <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
+    <Link className="font-semibold text-emerald-950" to="/">BD Tourist Guide</Link>
+    <nav className="flex items-center gap-4 text-sm" aria-label="Main navigation">
+      {token ? <Link className="text-slate-700 hover:text-emerald-800" to="/dashboard">Dashboard</Link> : <Link className="text-slate-700 hover:text-emerald-800" to="/login">Log in</Link>}
+      {user?.role === 'admin' && <Link className="font-semibold text-emerald-800 hover:text-emerald-950" to="/admin">Admin Panel</Link>}
+    </nav>
+  </header>
+}
+
+function DestinationApp() {
   const [destinations, setDestinations] = useState<Destination[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [selected, setSelected] = useState<Destination | null>(null)

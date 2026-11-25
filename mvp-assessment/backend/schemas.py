@@ -1,4 +1,33 @@
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
+
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+
+
+class UserRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: EmailStr
+    role: str
+    is_banned: bool
+    created_at: datetime
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    role: str
+    user: UserRead
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
 
 class DestinationFields(BaseModel):
@@ -20,3 +49,4 @@ class DestinationRead(DestinationFields):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    owner_id: int | None = None

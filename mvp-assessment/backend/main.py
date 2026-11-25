@@ -1,6 +1,26 @@
-from fastapi import FastAPI, HTTPException, Response, status
+import os
+
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from backend import schemas
+from backend.auth import create_access_token, get_current_user, hash_password, verify_password
+from backend.database import Base, engine, get_db
+from backend.models import User
+from backend.routers import admin as admin_router
+from backend.routers import destinations as destinations_router
+
+Base.metadata.create_all(bind=engine)
+# create_all creates new tables but does not alter existing ones. Add the ownership
+# column for databases that already had destinations before this phase.
+if engine.dialect.name == "postgresql":
+    with engine.begin() as connection:
+        connection.execute(text(
+            "ALTER TABLE destinations ADD COLUMN IF NOT EXISTS owner_id "
+            "INTEGER REFERENCES users(id) ON DELETE SET NULL"
+        ))
 
 app = FastAPI(
     title="BD Tourist Guide API",
@@ -10,53 +30,42 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if origin.strip()],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Temporary in-memory database for Vercel demo
-fake_db = []
-current_id = 1
+# Routers keep the API paths grouped while sharing the application's /api prefix.
+app.include_router(destinations_router.router, prefix="/api")
+app.include_router(admin_router.router, prefix="/api")
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
-@app.get("/api/destinations", response_model=list[schemas.DestinationRead])
-def list_destinations():
-    return fake_db
 
-@app.get("/api/destinations/{destination_id}", response_model=schemas.DestinationRead)
-def get_destination(destination_id: int):
-    for d in fake_db:
-        if d["id"] == destination_id:
-            return d
-    raise HTTPException(status_code=404, detail="Destination not found")
+@app.post("/api/auth/register", response_model=schemas.Token, status_code=status.HTTP_201_CREATED)
+def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
+    email = str(payload.email).lower()
+    if db.query(User).filter(User.email == email).first():
+        raise HTTPException(status_code=409, detail="An account with this email already exists")
+    user = User(email=email, hashed_password=hash_password(payload.password))
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"access_token": create_access_token(user_id=user.id, role=user.role), "role": user.role, "user": user}
 
-@app.post("/api/destinations", response_model=schemas.DestinationRead, status_code=status.HTTP_201_CREATED)
-def create_destination(payload: schemas.DestinationCreate):
-    global current_id
-    new_dest = payload.model_dump()
-    new_dest["id"] = current_id
-    fake_db.append(new_dest)
-    current_id += 1
-    return new_dest
 
-@app.put("/api/destinations/{destination_id}", response_model=schemas.DestinationRead)
-def update_destination(destination_id: int, payload: schemas.DestinationUpdate):
-    for i, d in enumerate(fake_db):
-        if d["id"] == destination_id:
-            updated_data = payload.model_dump(exclude_unset=True)
-            fake_db[i].update(updated_data)
-            return fake_db[i]
-    raise HTTPException(status_code=404, detail="Destination not found")
+@app.post("/api/auth/login", response_model=schemas.Token)
+def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == str(payload.email).lower()).first()
+    if user is None or not verify_password(payload.password, user.hashed_password) or user.is_banned:
+        raise HTTPException(status_code=401, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
+    return {"access_token": create_access_token(user_id=user.id, role=user.role), "role": user.role, "user": user}
 
-@app.delete("/api/destinations/{destination_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_destination(destination_id: int):
-    for i, d in enumerate(fake_db):
-        if d["id"] == destination_id:
-            del fake_db[i]
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
-    raise HTTPException(status_code=404, detail="Destination not found")
+
+@app.get("/api/auth/me", response_model=schemas.UserRead)
+def read_current_user(current_user: User = Depends(get_current_user)):
+    return current_user
+

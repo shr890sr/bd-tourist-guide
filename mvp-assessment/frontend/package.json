@@ -9,7 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.0",
     "@vitejs/plugin-react": "latest",
+    "axios": "^1.7.9",
+    "react-router-dom": "^7.1.1",
+    "tailwindcss": "^4.1.0",
     "vite": "latest",
     "typescript": "latest",
     "react": "latest",
