@@ -26,10 +26,10 @@ In a second terminal, from `mvp-assessment/frontend`:
 
 ```powershell
 npm install
-npm run dev
+npm run dev -- --host localhost --port 5174 --strictPort
 ```
 
-Open the Vite URL printed in the terminal (usually `http://localhost:5173`). Its `/api` proxy forwards requests to the backend on port 8000, so start the backend first.
+Open `http://localhost:5174`. Vite serves `frontend/index.html` and the React app; the repository root `index.html` is not used. The frontend connects directly to `http://localhost:8000/api`, so start the backend first. Its default CORS origins include `http://localhost:5174`.
 
 To build the frontend for production:
 

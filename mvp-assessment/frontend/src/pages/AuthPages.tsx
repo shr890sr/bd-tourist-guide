@@ -1,9 +1,8 @@
 import axios from 'axios'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '../api'
 import { useAuth } from '../AuthContext'
-
-const API_URL = import.meta.env.VITE_API_URL ?? ''
 
 export function Login() {
   return <AuthForm mode="login" />
@@ -27,7 +26,7 @@ function AuthForm({ mode }: { mode: 'login' | 'register' }) {
     setError('')
     setBusy(true)
     try {
-      const { data } = await axios.post(`${API_URL}/api/auth/${mode}`, { email, password })
+      const { data } = await api.post(`/auth/${mode}`, { email, password })
       signIn(data)
       navigate('/dashboard', { replace: true })
     } catch (reason) {

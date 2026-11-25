@@ -1,5 +1,5 @@
-import axios from 'axios'
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { api } from './api'
 
 type AuthUser = { id: number; email: string; role: string }
 type AuthResponse = { access_token: string; token_type: string; role?: string; user?: AuthUser }
@@ -8,8 +8,6 @@ type AuthContextValue = { token: string | null; role: string | null; user: AuthU
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 const TOKEN_KEY = 'access_token'
 const USER_KEY = 'auth_user'
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000'
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY))
   const [user, setUser] = useState<AuthUser | null>(() => {
@@ -25,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     let active = true
     setAuthLoading(true)
-    axios.get<AuthUser>(`${API_URL}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+    api.get<AuthUser>('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
       .then(({ data }) => {
         if (!active) return
         localStorage.setItem(USER_KEY, JSON.stringify(data))
@@ -35,7 +33,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!active) return
         localStorage.removeItem(TOKEN_KEY)
         localStorage.removeItem(USER_KEY)
-        delete axios.defaults.headers.common.Authorization
         setToken(null)
         setUser(null)
       })
@@ -53,13 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(data.access_token)
     setUser(authenticatedUser)
     setAuthLoading(true)
-    axios.defaults.headers.common.Authorization = `Bearer ${data.access_token}`
   }
 
   function signOut() {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
-    delete axios.defaults.headers.common.Authorization
     setToken(null)
     setUser(null)
   }

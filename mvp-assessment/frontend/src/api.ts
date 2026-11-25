@@ -1,8 +1,12 @@
 import axios from 'axios'
 import type { Destination, DestinationInput, AdminUser } from './types'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000'
-const api = axios.create({ baseURL: `${API_URL}/api` })
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? (
+  import.meta.env.PROD
+    ? 'https://bd-tourist-guide-backend.vercel.app/api'
+    : 'http://localhost:8000/api'
+)
+export const api = axios.create({ baseURL: API_BASE_URL })
 
 // Read the latest token at request time so every protected request automatically
 // carries Authorization: Bearer <JWT>, including after login or logout.
