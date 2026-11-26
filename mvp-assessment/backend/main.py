@@ -24,6 +24,9 @@ app = FastAPI(
     title="BD Tourist Guide API",
     description="CRUD API for Bangladesh tourist destinations.",
     version="1.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
 )
 
 app.add_middleware(
