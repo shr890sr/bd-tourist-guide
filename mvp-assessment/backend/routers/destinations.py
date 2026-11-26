@@ -1,11 +1,12 @@
 """Destination CRUD routes with ownership and admin authorization."""
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from auth import get_current_user, require_admin
+from audit import log_action
 from database import get_db
 from models import Destination, User
 from schemas import DestinationCreate, DestinationRead, DestinationUpdate
@@ -19,6 +20,7 @@ def create_destination(
     payload: DestinationCreate,
     db: DbSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    request: Request,
 ):
     # Ownership is assigned from the verified JWT user, never accepted from the request body.
     values = payload.model_dump()
@@ -26,8 +28,10 @@ def create_destination(
         values["image_url"] = str(values["image_url"])
     destination = Destination(**values, owner_id=current_user.id)
     db.add(destination)
-    db.commit()
+    db.flush()
+    log_action(db, user_id=current_user.id, action="DESTINATION_CREATED", details=f"{destination.name} (destination ID {destination.id})", ip_address=request.client.host if request.client else None)
     db.refresh(destination)
+    db.commit()
     return destination
 
 
@@ -81,7 +85,10 @@ def update_destination(
 def delete_destination(
     destination: Annotated[Destination, Depends(get_destination_for_owner_or_admin)],
     db: DbSession,
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
+    log_action(db, user_id=current_user.id, action="DESTINATION_DELETED", details=f"{destination.name} (destination ID {destination.id})", ip_address=request.client.host if request.client else None)
     db.delete(destination)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

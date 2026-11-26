@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Destination, DestinationInput, AdminUser } from './types'
+import type { Destination, DestinationInput, AdminUser, AuditLog } from './types'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? (
   import.meta.env.PROD
@@ -35,6 +35,7 @@ export const authApi = {
 export const adminApi = {
   users: async () => (await api.get<AdminUser[]>('/admin/users')).data,
   toggleBan: async (id: number) => (await api.put<AdminUser>(`/admin/users/${id}/ban`)).data,
+  auditLogs: async () => (await api.get<AuditLog[]>('/admin/audit-logs')).data,
 }
 
 export function apiErrorMessage(error: unknown): string {

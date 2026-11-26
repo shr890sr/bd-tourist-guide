@@ -18,6 +18,16 @@ class UserRead(BaseModel):
     created_at: datetime
 
 
+class AuditLogRead(BaseModel):
+    id: int
+    user_id: int | None
+    user_email: EmailStr | None
+    action: str
+    details: str
+    timestamp: datetime
+    ip_address: str | None
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"

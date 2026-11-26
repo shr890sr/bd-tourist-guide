@@ -30,3 +30,14 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(32), nullable=False, default="user")
     is_banned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    details: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)

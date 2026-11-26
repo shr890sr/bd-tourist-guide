@@ -1,10 +1,11 @@
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 import schemas
 from auth import create_access_token, get_current_user, hash_password, verify_password
+from audit import log_action
 from database import Base, engine, get_db
 from models import User
 from routers import admin as admin_router
@@ -47,22 +48,26 @@ def health() -> dict[str, str]:
 
 
 @app.post("/api/auth/register", response_model=schemas.Token, status_code=status.HTTP_201_CREATED)
-def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
+def register(payload: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
     email = str(payload.email).lower()
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=409, detail="An account with this email already exists")
     user = User(email=email, hashed_password=hash_password(payload.password))
     db.add(user)
-    db.commit()
+    db.flush()
+    log_action(db, user_id=user.id, action="USER_REGISTERED", details=f"Registered account {user.email}", ip_address=request.client.host if request.client else None)
     db.refresh(user)
+    db.commit()
     return {"access_token": create_access_token(user_id=user.id, role=user.role), "role": user.role, "user": user}
 
 
 @app.post("/api/auth/login", response_model=schemas.Token)
-def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
+def login(payload: schemas.LoginRequest, request: Request, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == str(payload.email).lower()).first()
     if user is None or not verify_password(payload.password, user.hashed_password) or user.is_banned:
         raise HTTPException(status_code=401, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
+    log_action(db, user_id=user.id, action="USER_LOGIN", details=f"Logged in as {user.email}", ip_address=request.client.host if request.client else None)
+    db.commit()
     return {"access_token": create_access_token(user_id=user.id, role=user.role), "role": user.role, "user": user}
 
 

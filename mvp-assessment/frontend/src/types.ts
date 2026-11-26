@@ -16,3 +16,13 @@ export interface AdminUser {
   is_banned: boolean
   created_at: string
 }
+
+export interface AuditLog {
+  id: number
+  user_id: number | null
+  user_email: string | null
+  action: string
+  details: string
+  timestamp: string
+  ip_address: string | null
+}
