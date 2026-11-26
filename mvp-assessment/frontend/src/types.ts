@@ -26,3 +26,18 @@ export interface AuditLog {
   timestamp: string
   ip_address: string | null
 }
+
+export type GroupRole = 'admin' | 'member'
+
+export interface GroupMember {
+  user_id: number
+  email: string
+  role: GroupRole
+}
+
+export interface UserGroup {
+  id: number
+  name: string
+  owner_id: number
+  members: GroupMember[]
+}

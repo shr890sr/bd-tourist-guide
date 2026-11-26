@@ -22,6 +22,7 @@ from database import Base, engine, get_db
 from models import AuthSession, User
 from routers import admin as admin_router
 from routers import destinations as destinations_router
+from routers import groups as groups_router
 
 Base.metadata.create_all(bind=engine)
 # create_all creates new tables but does not alter existing ones. Add the ownership
@@ -76,6 +77,7 @@ def set_refresh_cookie(response: Response, request: Request, refresh_token: str)
 # Routers keep the API paths grouped while sharing the application's /api prefix.
 app.include_router(destinations_router.router, prefix="/api")
 app.include_router(admin_router.router, prefix="/api")
+app.include_router(groups_router.router, prefix="/api")
 
 @app.get("/api/health")
 def health() -> dict[str, str]:

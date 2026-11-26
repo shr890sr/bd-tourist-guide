@@ -5,6 +5,7 @@ import { Login, Register } from './pages/AuthPages'
 import AdminDashboard from './pages/AdminDashboard'
 import Dashboard from './pages/Dashboard'
 import Home from './pages/Home'
+import GroupsPage from './pages/GroupsPage'
 import { destinationApi } from './api'
 import { DestinationDetail } from './components/DestinationDetail'
 import { DestinationForm } from './components/DestinationForm'
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<ProtectedDashboard />} />
       <Route path="/admin" element={<ProtectedAdminDashboard />} />
+      <Route path="/groups" element={<ProtectedGroupsPage />} />
       <Route path="/destinations" element={<DestinationApp />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -40,12 +42,19 @@ function ProtectedAdminDashboard() {
   return user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/dashboard" replace />
 }
 
+function ProtectedGroupsPage() {
+  const { token, authLoading } = useAuth()
+  if (authLoading) return <main className="mx-auto max-w-6xl p-6" aria-live="polite">Loading account…</main>
+  return token ? <GroupsPage /> : <Navigate to="/login" replace />
+}
+
 function Navbar() {
   const { token, user } = useAuth()
   return <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
     <Link className="font-semibold text-emerald-950" to="/">BD Tourist Guide</Link>
     <nav className="flex items-center gap-4 text-sm" aria-label="Main navigation">
       {token ? <Link className="text-slate-700 hover:text-emerald-800" to="/dashboard">Dashboard</Link> : <Link className="text-slate-700 hover:text-emerald-800" to="/login">Log in</Link>}
+      {token && <Link className="text-slate-700 hover:text-emerald-800" to="/groups">Groups</Link>}
       {user?.role === 'admin' && <Link className="font-semibold text-emerald-800 hover:text-emerald-950" to="/admin">Admin Panel</Link>}
     </nav>
   </header>

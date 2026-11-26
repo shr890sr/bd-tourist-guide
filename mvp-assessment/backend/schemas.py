@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
 
 
@@ -47,6 +49,28 @@ class ProfileUpdate(BaseModel):
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str = Field(min_length=8, max_length=128)
+
+
+class GroupCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+
+
+class GroupMemberAdd(BaseModel):
+    email: EmailStr
+    role: Literal["admin", "member"] = "member"
+
+
+class GroupMemberRead(BaseModel):
+    user_id: int
+    email: EmailStr
+    role: Literal["admin", "member"]
+
+
+class GroupRead(BaseModel):
+    id: int
+    name: str
+    owner_id: int
+    members: list[GroupMemberRead]
 
 
 class DestinationFields(BaseModel):
