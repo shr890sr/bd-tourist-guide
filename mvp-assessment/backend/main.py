@@ -3,12 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from backend import schemas
-from backend.auth import create_access_token, get_current_user, hash_password, verify_password
-from backend.database import Base, engine, get_db
-from backend.models import User
-from backend.routers import admin as admin_router
-from backend.routers import destinations as destinations_router
+import schemas
+from auth import create_access_token, get_current_user, hash_password, verify_password
+from database import Base, engine, get_db
+from models import User
+from routers import admin as admin_router
+from routers import destinations as destinations_router
 
 Base.metadata.create_all(bind=engine)
 # create_all creates new tables but does not alter existing ones. Add the ownership

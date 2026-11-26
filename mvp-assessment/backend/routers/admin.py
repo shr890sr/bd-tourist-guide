@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.auth import require_admin
-from backend.database import get_db
-from backend.models import User
-from backend.schemas import UserRead
+from auth import require_admin
+from database import get_db
+from models import User
+from schemas import UserRead
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 AdminUser = Annotated[User, Depends(require_admin)]

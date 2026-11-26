@@ -10,8 +10,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from backend.database import get_db
-from backend.models import User
+from database import get_db
+from models import User
 
 load_dotenv()
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")

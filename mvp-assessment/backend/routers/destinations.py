@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.auth import get_current_user, require_admin
-from backend.database import get_db
-from backend.models import Destination, User
-from backend.schemas import DestinationCreate, DestinationRead, DestinationUpdate
+from auth import get_current_user, require_admin
+from database import get_db
+from models import Destination, User
+from schemas import DestinationCreate, DestinationRead, DestinationUpdate
 
 router = APIRouter(prefix="/destinations", tags=["destinations"])
 DbSession = Annotated[Session, Depends(get_db)]
