@@ -18,7 +18,7 @@ pip install -r backend/requirements.txt
 uvicorn backend.main:app --reload
 ```
 
-The API is available at `http://127.0.0.1:8000`; interactive docs are at `http://127.0.0.1:8000/docs`. SQLite creates `destinations.db` in the current working directory by default. Set `DATABASE_URL` to change the database location. Set comma-separated `CORS_ORIGINS` if the browser frontend will call the backend directly from a different origin. With the provided Vite proxy, the browser talks to Vite and no extra local CORS origin is needed.
+The API is available at `http://127.0.0.1:8000`; interactive docs are at `http://127.0.0.1:8000/docs`. SQLite creates `destinations.db` in the current working directory by default. Set `DATABASE_URL` to change the database location. Set comma-separated `CORS_ORIGINS` to the exact browser frontend origins when it calls the backend from another origin. In production, configure the frontend's origin there so credentialed refresh-cookie requests are accepted. Refresh cookies are HTTP-only, and HTTPS deployments use `Secure` and `SameSite=None` for cross-origin browser requests.
 
 ## Run the React frontend locally
 

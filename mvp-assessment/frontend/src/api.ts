@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { type InternalAxiosRequestConfig } from 'axios'
 import type { Destination, DestinationInput, AdminUser, AuditLog } from './types'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? (
@@ -6,7 +6,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ?? (
     ? 'https://bd-tourist-guide-backend.vercel.app/api'
     : 'http://localhost:8000/api'
 )
-export const api = axios.create({ baseURL: API_BASE_URL })
+declare module 'axios' {
+  interface InternalAxiosRequestConfig {
+    _retry?: boolean
+  }
+}
+
+export const api = axios.create({ baseURL: API_BASE_URL, withCredentials: true })
+
+let refreshPromise: Promise<string> | null = null
 
 // Read the latest token at request time so every protected request automatically
 // carries Authorization: Bearer <JWT>, including after login or logout.
@@ -15,6 +23,35 @@ api.interceptors.request.use((config) => {
   if (token) config.headers.Authorization = `Bearer ${token}`
   else delete config.headers.Authorization
   return config
+})
+
+api.interceptors.response.use((response) => response, async (error: unknown) => {
+  if (!axios.isAxiosError(error)) throw error
+  const originalRequest = error.config as InternalAxiosRequestConfig | undefined
+  const url = originalRequest?.url ?? ''
+  const isAuthFlow = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'].some((path) => url.includes(path))
+  if (error.response?.status !== 401 || !originalRequest || originalRequest._retry || isAuthFlow) throw error
+
+  originalRequest._retry = true
+  try {
+    if (!refreshPromise) {
+      refreshPromise = api.post<{ access_token: string }>('/auth/refresh')
+        .then(({ data }) => {
+          localStorage.setItem('access_token', data.access_token)
+          window.dispatchEvent(new CustomEvent('auth:token-refreshed', { detail: data.access_token }))
+          return data.access_token
+        })
+        .finally(() => { refreshPromise = null })
+    }
+    const accessToken = await refreshPromise
+    originalRequest.headers.Authorization = `Bearer ${accessToken}`
+    return await api(originalRequest)
+  } catch (refreshError) {
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('auth_user')
+    window.dispatchEvent(new Event('auth:session-expired'))
+    throw refreshError
+  }
 })
 
 export const destinationApi = {

@@ -3,7 +3,7 @@ import { api } from './api'
 
 type AuthUser = { id: number; email: string; role: string }
 type AuthResponse = { access_token: string; token_type: string; role?: string; user?: AuthUser }
-type AuthContextValue = { token: string | null; role: string | null; user: AuthUser | null; authLoading: boolean; signIn: (data: AuthResponse) => void; updateUser: (user: AuthUser) => void; signOut: () => void }
+type AuthContextValue = { token: string | null; role: string | null; user: AuthUser | null; authLoading: boolean; signIn: (data: AuthResponse) => void; updateUser: (user: AuthUser) => void; signOut: () => Promise<void> }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 const TOKEN_KEY = 'access_token'
@@ -15,6 +15,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return saved ? JSON.parse(saved) as AuthUser : null
   })
   const [authLoading, setAuthLoading] = useState(() => Boolean(localStorage.getItem(TOKEN_KEY)))
+
+  useEffect(() => {
+    function onTokenRefreshed(event: Event) {
+      const refreshedToken = (event as CustomEvent<string>).detail
+      if (refreshedToken) setToken(refreshedToken)
+    }
+    function onSessionExpired() {
+      setToken(null)
+      setUser(null)
+    }
+    window.addEventListener('auth:token-refreshed', onTokenRefreshed)
+    window.addEventListener('auth:session-expired', onSessionExpired)
+    return () => {
+      window.removeEventListener('auth:token-refreshed', onTokenRefreshed)
+      window.removeEventListener('auth:session-expired', onSessionExpired)
+    }
+  }, [])
 
   useEffect(() => {
     if (!token) {
@@ -52,11 +69,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthLoading(true)
   }
 
-  function signOut() {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
-    setToken(null)
-    setUser(null)
+  async function signOut() {
+    try {
+      await api.post('/auth/logout')
+    } catch {
+      // Clear the local session even if the API is unavailable during logout.
+    } finally {
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(USER_KEY)
+      setToken(null)
+      setUser(null)
+    }
   }
 
   function updateUser(updatedUser: AuthUser) {
