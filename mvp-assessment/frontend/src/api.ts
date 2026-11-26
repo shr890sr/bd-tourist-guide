@@ -25,6 +25,13 @@ export const destinationApi = {
   remove: async (id: number) => { await api.delete(`/destinations/${id}`) },
 }
 
+export const authApi = {
+  updateProfile: async (email: string) => (await api.put<{ id: number; email: string; role: string }>('/auth/profile', { email })).data,
+  changePassword: async (current_password: string, new_password: string) => {
+    await api.put('/auth/change-password', { current_password, new_password })
+  },
+}
+
 export const adminApi = {
   users: async () => (await api.get<AdminUser[]>('/admin/users')).data,
   toggleBan: async (id: number) => (await api.put<AdminUser>(`/admin/users/${id}/ban`)).data,

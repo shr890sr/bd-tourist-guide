@@ -3,7 +3,7 @@ import { api } from './api'
 
 type AuthUser = { id: number; email: string; role: string }
 type AuthResponse = { access_token: string; token_type: string; role?: string; user?: AuthUser }
-type AuthContextValue = { token: string | null; role: string | null; user: AuthUser | null; authLoading: boolean; signIn: (data: AuthResponse) => void; signOut: () => void }
+type AuthContextValue = { token: string | null; role: string | null; user: AuthUser | null; authLoading: boolean; signIn: (data: AuthResponse) => void; updateUser: (user: AuthUser) => void; signOut: () => void }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 const TOKEN_KEY = 'access_token'
@@ -59,7 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
-  const value = useMemo(() => ({ token, role: user?.role ?? null, user, authLoading, signIn, signOut }), [token, user, authLoading])
+  function updateUser(updatedUser: AuthUser) {
+    localStorage.setItem(USER_KEY, JSON.stringify(updatedUser))
+    setUser(updatedUser)
+  }
+
+  const value = useMemo(() => ({ token, role: user?.role ?? null, user, authLoading, signIn, updateUser, signOut }), [token, user, authLoading])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

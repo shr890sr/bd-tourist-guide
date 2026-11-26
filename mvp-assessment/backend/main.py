@@ -70,3 +70,31 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
 def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
 
+
+@app.put("/api/auth/profile", response_model=schemas.UserRead)
+def update_profile(
+    payload: schemas.ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    email = str(payload.email).lower()
+    existing_user = db.query(User).filter(User.email == email, User.id != current_user.id).first()
+    if existing_user:
+        raise HTTPException(status_code=409, detail="An account with this email already exists")
+    current_user.email = email
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@app.put("/api/auth/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: schemas.PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    current_user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+

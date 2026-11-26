@@ -30,6 +30,15 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class ProfileUpdate(BaseModel):
+    email: EmailStr
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=128)
+
+
 class DestinationFields(BaseModel):
     name: str = Field(min_length=2, max_length=160)
     description: str = Field(min_length=5, max_length=5000)

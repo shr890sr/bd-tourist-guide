@@ -1,19 +1,28 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
-import { apiErrorMessage, destinationApi } from '../api'
+import { apiErrorMessage, authApi, destinationApi } from '../api'
 import type { Destination, DestinationInput } from '../types'
 
 const emptyForm: DestinationInput = { name: '', description: '', location: '', image_url: null }
 
 export default function Dashboard() {
-  const { user, role, signOut } = useAuth()
+  const { user, role, signOut, updateUser } = useAuth()
   const [destinations, setDestinations] = useState<Destination[]>([])
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [profileEmail, setProfileEmail] = useState(user?.email ?? '')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [profileMessage, setProfileMessage] = useState('')
+  const [profileError, setProfileError] = useState('')
+  const [passwordMessage, setPasswordMessage] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [profileBusy, setProfileBusy] = useState(false)
+  const [passwordBusy, setPasswordBusy] = useState(false)
   const isAdmin = role === 'admin'
 
   const loadDestinations = useCallback(async () => {
@@ -64,6 +73,40 @@ export default function Dashboard() {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setProfileBusy(true)
+    setProfileError('')
+    setProfileMessage('')
+    try {
+      const updatedUser = await authApi.updateProfile(profileEmail.trim())
+      updateUser({ ...updatedUser, role: updatedUser.role || role || 'user' })
+      setProfileEmail(updatedUser.email)
+      setProfileMessage('Email updated successfully.')
+    } catch (reason) {
+      setProfileError(apiErrorMessage(reason))
+    } finally {
+      setProfileBusy(false)
+    }
+  }
+
+  async function savePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setPasswordBusy(true)
+    setPasswordError('')
+    setPasswordMessage('')
+    try {
+      await authApi.changePassword(currentPassword, newPassword)
+      setCurrentPassword('')
+      setNewPassword('')
+      setPasswordMessage('Password changed successfully.')
+    } catch (reason) {
+      setPasswordError(apiErrorMessage(reason))
+    } finally {
+      setPasswordBusy(false)
+    }
+  }
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -73,6 +116,25 @@ export default function Dashboard() {
 
       {error && <p role="alert" className="alert alert-error mt-5">{error}</p>}
       {notice && <p role="status" className="alert alert-success mt-5">{notice}</p>}
+
+      <section className="mt-8 grid gap-6 md:grid-cols-2" aria-labelledby="profile-settings-heading">
+        <h2 id="profile-settings-heading" className="sr-only">Profile Settings</h2>
+        <form className="form-panel h-fit" onSubmit={(event) => void saveProfile(event)}>
+          <div><p className="eyebrow">Your account</p><h2>Profile Settings</h2></div>
+          {profileError && <p role="alert" className="alert alert-error">{profileError}</p>}
+          {profileMessage && <p role="status" className="alert alert-success">{profileMessage}</p>}
+          <label>Email<input type="email" autoComplete="email" required maxLength={320} value={profileEmail} onChange={(event) => setProfileEmail(event.target.value)} /></label>
+          <button className="button button-primary" disabled={profileBusy}>{profileBusy ? 'Saving…' : 'Update email'}</button>
+        </form>
+        <form className="form-panel h-fit" onSubmit={(event) => void savePassword(event)}>
+          <div><p className="eyebrow">Keep your account secure</p><h2>Change password</h2></div>
+          {passwordError && <p role="alert" className="alert alert-error">{passwordError}</p>}
+          {passwordMessage && <p role="status" className="alert alert-success">{passwordMessage}</p>}
+          <label>Current password<input type="password" autoComplete="current-password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label>
+          <label>New password<input type="password" autoComplete="new-password" minLength={8} maxLength={128} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
+          <button className="button button-primary" disabled={passwordBusy}>{passwordBusy ? 'Saving…' : 'Change password'}</button>
+        </form>
+      </section>
 
       <section className="mt-10 grid gap-8 md:grid-cols-[minmax(0,1.3fr)_minmax(280px,.7fr)]">
         <div>
