@@ -1,24 +1,5 @@
-const path = require('node:path');
-const express = require('express');
-const database = require('./db');
-
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
-
-const app = express();
-const projectRoot = path.join(__dirname, '..');
-const port = Number(process.env.PORT) || 3000;
-
-app.use('/css', express.static(path.join(projectRoot, 'css')));
-app.use('/js', express.static(path.join(projectRoot, 'js')));
-app.use('/assets', express.static(path.join(projectRoot, 'assets')));
-app.get('/', (_request, response) => {
-
-  response.sendFile(path.join(projectRoot, 'index.html'));
-  
-});
-
-app.listen(port, '127.0.0.1', () => {
-  console.log(`BD Tourist Guide is available at http://localhost:${port}`);
-});
-
-process.on('beforeExit', () => database.close());
+const path=require('node:path');require('dotenv').config({path:path.join(__dirname,'..','.env')});
+const {createApp}=require('./app');const {app,database}=createApp();const port=Number(process.env.PORT)||3000,host=process.env.HOST||'127.0.0.1';
+const server=app.listen(port,host,()=>console.log(`BD Tourist Guide is available at http://${host}:${port}`));
+function shutdown(){server.close(()=>{database.close();process.exit(0);});setTimeout(()=>process.exit(1),10000).unref();}
+process.on('SIGINT',shutdown);process.on('SIGTERM',shutdown);

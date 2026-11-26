@@ -1,0 +1,4 @@
+function publicUser(user) { const { id, full_name, email, phone, role, created_at } = user; return { id, fullName: full_name, email, phone, role, createdAt: created_at }; }
+function guide(row) { return { id: row.id, userId: row.user_id, name: row.full_name, location: row.location, languages: JSON.parse(row.languages), introduction: row.introduction, guideType: row.guide_type, availability: JSON.parse(row.availability), averageRating: row.average_rating == null ? null : Number(row.average_rating), reviewCount: Number(row.review_count || 0) }; }
+function destination(row) { return { id: row.id, name: row.name, description: row.description, location: row.location, imageUrl: row.image_url, category: row.category, averageRating: row.average_rating == null ? null : Number(row.average_rating), reviewCount: Number(row.review_count || 0) }; }
+module.exports = { publicUser, guide, destination };
