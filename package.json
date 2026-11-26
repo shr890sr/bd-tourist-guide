@@ -4,7 +4,8 @@
   "private": true,
   "description": "BD Tourist Guide website starter",
   "scripts": {
-    "start": "node backend/server.js"
+    "start": "node backend/server.js",
+    "test": "node --test"
   },
   "dependencies": {
 
