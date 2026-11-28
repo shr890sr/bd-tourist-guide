@@ -43,8 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.get<AuthUser>('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
       .then(({ data }) => {
         if (!active) return
-        localStorage.setItem(USER_KEY, JSON.stringify(data))
-        setUser(data)
+        const authenticatedUser = { ...data, role: data.role || 'user' }
+        localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser))
+        setUser(authenticatedUser)
       })
       .catch(() => {
         if (!active) return

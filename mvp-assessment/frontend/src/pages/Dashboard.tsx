@@ -23,7 +23,7 @@ export default function Dashboard() {
   const [passwordError, setPasswordError] = useState('')
   const [profileBusy, setProfileBusy] = useState(false)
   const [passwordBusy, setPasswordBusy] = useState(false)
-  const isAdmin = role === 'admin'
+  const isAdmin = user?.role === 'admin'
 
   const loadDestinations = useCallback(async () => {
     setError('')

@@ -61,8 +61,8 @@ function Navbar() {
 }
 
 function DestinationApp() {
-  const { user, role } = useAuth()
-  const isAdmin = role?.trim().toLowerCase() === 'admin'
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
   const [destinations, setDestinations] = useState<Destination[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [selected, setSelected] = useState<Destination | null>(null)
