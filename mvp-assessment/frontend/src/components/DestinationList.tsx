@@ -3,12 +3,14 @@ import type { Destination } from '../types'
 interface Props {
   destinations: Destination[]
   selectedId: number | null
+  userId: number | null
+  isAdmin: boolean
   onSelect: (id: number) => void
   onEdit: (destination: Destination) => void
   onDelete: (destination: Destination) => void
 }
 
-export function DestinationList({ destinations, selectedId, onSelect, onEdit, onDelete }: Props) {
+export function DestinationList({ destinations, selectedId, userId, isAdmin, onSelect, onEdit, onDelete }: Props) {
   if (destinations.length === 0) {
     return <div className="empty-state">No destinations yet. Add one to start your guide.</div>
   }
@@ -29,7 +31,7 @@ export function DestinationList({ destinations, selectedId, onSelect, onEdit, on
           </button>
           <div className="card-actions">
             <button className="button button-subtle" onClick={() => onEdit(destination)}>Edit</button>
-            <button className="button button-danger" onClick={() => onDelete(destination)}>Delete</button>
+            {(isAdmin || destination.owner_id === userId) && <button className="button button-danger" onClick={() => onDelete(destination)}>Delete</button>}
           </div>
         </article>
       ))}
