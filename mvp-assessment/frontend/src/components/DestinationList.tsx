@@ -31,7 +31,9 @@ export function DestinationList({ destinations, selectedId, userId, isAdmin, onS
           </button>
           <div className="card-actions">
             <button className="button button-subtle" onClick={() => onEdit(destination)}>Edit</button>
-            {(isAdmin || destination.owner_id === userId) && <button className="button button-danger" onClick={() => onDelete(destination)}>Delete</button>}
+            {isAdmin === true || userId === destination.owner_id ? (
+              <button className="button button-danger" onClick={() => onDelete(destination)}>Delete</button>
+            ) : null}
           </div>
         </article>
       ))}

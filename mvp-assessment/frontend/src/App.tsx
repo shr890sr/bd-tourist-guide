@@ -62,7 +62,6 @@ function Navbar() {
 
 function DestinationApp() {
   const { user } = useAuth()
-  const isAdmin = user?.role === 'admin'
   const [destinations, setDestinations] = useState<Destination[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [selected, setSelected] = useState<Destination | null>(null)
@@ -181,7 +180,7 @@ function DestinationApp() {
                   destinations={visibleDestinations}
                   selectedId={selectedId}
                   userId={user?.id ?? null}
-                  isAdmin={isAdmin}
+                  isAdmin={user?.role === 'admin'}
                   onSelect={setSelectedId}
                   onEdit={startEdit}
                   onDelete={(destination) => void remove(destination)}
