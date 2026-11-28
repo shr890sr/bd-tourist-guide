@@ -43,6 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.get<AuthUser>('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
       .then(({ data }) => {
         if (!active) return
+        // The /me response is authoritative, including its role; don't retain
+        // a potentially stale role from the user object loaded from storage.
         const authenticatedUser = { ...data, role: data.role || 'user' }
         localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser))
         setUser(authenticatedUser)
@@ -60,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function signIn(data: AuthResponse) {
     const authenticatedUser = data.user
-      ? { ...data.user, role: data.user.role || data.role || 'user' }
+      ? { ...data.user, role: data.role || data.user.role || 'user' }
       : null
     localStorage.setItem(TOKEN_KEY, data.access_token)
     if (authenticatedUser) localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser))
